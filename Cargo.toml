@@ -1,0 +1,10 @@
+[package]
+name = "env_exec"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.95"
+regex = "1.11.1"
+serde = { version = "1.0.217", features = ["serde_derive"] }
+toml = "0.8.19"
