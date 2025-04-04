@@ -5,8 +5,11 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.95"
+log = "0.4.27"
 regex = "1.11.1"
 serde = { version = "1.0.217", features = ["serde_derive"] }
+simple_logger = "5.0.0"
 tempfile = "3.19.1"
 toml = "0.8.19"
 uuid = "1.16.0"
+winapi = {version = "0.3.9",features = ["jobapi2", "handleapi", "processthreadsapi", "winbase","winuser","errhandlingapi"]}
