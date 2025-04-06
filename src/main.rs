@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use simple_logger::SimpleLogger;
 use std::env;
 use std::fs::File;
-use std::io::{self, BufRead};
+use std::io::{self, BufRead,Seek,SeekFrom,Write,Read};
 use std::path::Path;
 use std::process::{Child, Command, Stdio};
 use std::thread;
@@ -53,9 +53,26 @@ fn assign_to_job_object(child: &std::process::Child) {
 struct TempData {
     config_file: String,
     program: String,
-    ppid: String,
+    ppid: u32,
 }
-
+impl TempData{
+	fn new()->Self{
+		Self{
+			config_file:String::new(),
+			program:String::new(),
+			ppid: 0,
+		}
+	}
+	fn set_config_file(&mut self,config_file:String){
+		self.config_file = config_file;
+	}
+	fn set_program(&mut self,program:String){
+		self.program = program;
+	}
+	fn set_ppid(&mut self,ppid:u32){
+		self.ppid = ppid;
+	}
+}
 #[derive(Debug, Deserialize)]
 struct Config {
     paths: Vec<String>,
@@ -73,7 +90,7 @@ fn main() -> Result<()> {
     let _ = SimpleLogger::new().init();
     let args: Vec<String> = env::args().collect();
     let self_program = &args[0];
-
+    let mut temp_data = TempData::new();
     if args.len() < 3 {
         eprintln!(
             "Usage: {} <config_file> <program> [command...]",
@@ -86,13 +103,22 @@ fn main() -> Result<()> {
     let program = &args[2];
     let command_args = &args[3..];
 
-    let temp_file = Builder::new()
+    temp_data.set_config_file(config_file.to_string());
+    temp_data.set_program(program.to_string());
+    temp_data.set_ppid(std::process::id());
+    
+    let mut temp_file = Builder::new()
         .prefix(&format!("{}_{}_", self_program, program))
         .suffix(".tmp")
         .keep(true)
         .tempfile()?;
 
     debug!("temp file path: {:?}", temp_file.path());
+    
+      // TempData をバイナリにシリアライズして書き込み
+    let encoded: Vec<u8> = bincode::serialize(&temp_data).unwrap();
+    temp_file.write_all(&encoded)?;
+    
     let config: Config = read_toml(config_file)?;
 
     let current_path = env::var("Path").unwrap_or_default();
