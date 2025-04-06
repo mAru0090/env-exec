@@ -296,8 +296,9 @@ fn main() -> Result<()> {
                 }
             }
             EnvVar::Multiple(ref key, ref values) => {
-                env::set_var(key, values.join(";"));
-            }
+            	let expanded_values = expand_env_variables_vec(values);
+            	env::set_var(key, expanded_values.join(";"));
+           }
         }
     }
 
@@ -362,3 +363,7 @@ fn expand_env_variables(input: &str) -> String {
     })
     .to_string()
 }
+fn expand_env_variables_vec(inputs: &[String]) -> Vec<String> {
+    inputs.iter().map(|s| expand_env_variables(s)).collect()
+}
+
