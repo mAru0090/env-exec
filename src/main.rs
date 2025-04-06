@@ -1,10 +1,4 @@
 // winapiクレートから必要な関数・定数をインポート
-use std::ptr::null_mut;
-use winapi::shared::minwindef::DWORD;
-use winapi::um::jobapi2::{CreateJobObjectW, SetInformationJobObject, AssignProcessToJobObject};
-use winapi::um::winnt::{
-    JOBOBJECT_EXTENDED_LIMIT_INFORMATION, JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE, JobObjectExtendedLimitInformation,
-};
 use anyhow::Result;
 use log::*;
 use regex::Regex;
@@ -13,23 +7,30 @@ use serde::{Deserialize, Serialize};
 use simple_logger::SimpleLogger;
 use std::env;
 use std::fs::File;
-use std::io::{self, BufRead,Seek,SeekFrom,Write,Read};
+use std::io::{self, BufRead, Read, Seek, SeekFrom, Write};
+use std::os::windows::io::AsRawHandle;
 use std::path::Path;
 use std::process::{Child, Command, Stdio};
+use std::ptr::null_mut;
 use std::thread;
 use std::thread::sleep;
 use std::time::Duration;
 use tempfile::Builder;
 use toml;
-use std::os::windows::io::AsRawHandle;
+use winapi::shared::minwindef::DWORD;
+use winapi::um::jobapi2::{AssignProcessToJobObject, CreateJobObjectW, SetInformationJobObject};
+use winapi::um::winnt::{
+    JobObjectExtendedLimitInformation, JOBOBJECT_EXTENDED_LIMIT_INFORMATION,
+    JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+};
 
 fn assign_to_job_object(child: &std::process::Child) {
     unsafe {
         let h_job = CreateJobObjectW(null_mut(), null_mut());
 
         let mut info: JOBOBJECT_EXTENDED_LIMIT_INFORMATION = std::mem::zeroed();
-        info.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
-
+        //info.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+        info.BasicLimitInformation.LimitFlags = 0;
         SetInformationJobObject(
             h_job,
             9, // JobObjectExtendedLimitInformation
@@ -42,36 +43,29 @@ fn assign_to_job_object(child: &std::process::Child) {
     }
 }
 
-
-
-
-
-
-
-
 #[derive(Debug, Serialize, Deserialize)]
 struct TempData {
     config_file: String,
     program: String,
     ppid: u32,
 }
-impl TempData{
-	fn new()->Self{
-		Self{
-			config_file:String::new(),
-			program:String::new(),
-			ppid: 0,
-		}
-	}
-	fn set_config_file(&mut self,config_file:String){
-		self.config_file = config_file;
-	}
-	fn set_program(&mut self,program:String){
-		self.program = program;
-	}
-	fn set_ppid(&mut self,ppid:u32){
-		self.ppid = ppid;
-	}
+impl TempData {
+    fn new() -> Self {
+        Self {
+            config_file: String::new(),
+            program: String::new(),
+            ppid: 0,
+        }
+    }
+    fn set_config_file(&mut self, config_file: String) {
+        self.config_file = config_file;
+    }
+    fn set_program(&mut self, program: String) {
+        self.program = program;
+    }
+    fn set_ppid(&mut self, ppid: u32) {
+        self.ppid = ppid;
+    }
 }
 #[derive(Debug, Deserialize)]
 struct Config {
@@ -106,7 +100,7 @@ fn main() -> Result<()> {
     temp_data.set_config_file(config_file.to_string());
     temp_data.set_program(program.to_string());
     temp_data.set_ppid(std::process::id());
-    
+
     let mut temp_file = Builder::new()
         .prefix(&format!("{}_{}_", self_program, program))
         .suffix(".tmp")
@@ -114,11 +108,11 @@ fn main() -> Result<()> {
         .tempfile()?;
 
     debug!("temp file path: {:?}", temp_file.path());
-    
-      // TempData をバイナリにシリアライズして書き込み
+
+    // TempData をバイナリにシリアライズして書き込み
     let encoded: Vec<u8> = bincode::serialize(&temp_data).unwrap();
     temp_file.write_all(&encoded)?;
-    
+
     let config: Config = read_toml(config_file)?;
 
     let current_path = env::var("Path").unwrap_or_default();
@@ -132,9 +126,9 @@ fn main() -> Result<()> {
                 }
             }
             EnvVar::Multiple(ref key, ref values) => {
-            	let expanded_values = expand_env_variables_vec(values);
-            	env::set_var(key, expanded_values.join(";"));
-           }
+                let expanded_values = expand_env_variables_vec(values);
+                env::set_var(key, expanded_values.join(";"));
+            }
         }
     }
 
@@ -157,7 +151,7 @@ fn main() -> Result<()> {
     let mut child: Child = command.spawn()?;
     debug!("Process started: {:?}", child.id());
 
-    assign_to_job_object(&child);
+    // assign_to_job_object(&child);
 
     let temp_path = temp_file.path().to_path_buf();
 
@@ -167,7 +161,6 @@ fn main() -> Result<()> {
     if let Err(e) = std::fs::remove_file(&temp_path) {
         eprintln!("Failed to delete temp file: {}", e);
     }
-
 
     Ok(())
 }
@@ -192,4 +185,3 @@ fn expand_env_variables(input: &str) -> String {
 fn expand_env_variables_vec(inputs: &[String]) -> Vec<String> {
     inputs.iter().map(|s| expand_env_variables(s)).collect()
 }
-
