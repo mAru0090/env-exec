@@ -1,4 +1,3 @@
-// winapiクレートから必要な関数・定数をインポート
 use anyhow::Result;
 use log::*;
 use regex::Regex;
@@ -6,43 +5,15 @@ use serde::de::Error;
 use serde::{Deserialize, Serialize};
 use simple_logger::SimpleLogger;
 use std::env;
+use std::ffi::OsStr;
 use std::fs::File;
-use std::io::{self, BufRead, Read, Seek, SeekFrom, Write};
-use std::os::windows::io::AsRawHandle;
+use std::io::{self, Write};
+use std::os::windows::process::CommandExt;
 use std::path::Path;
 use std::process::{Child, Command, Stdio};
-use std::ptr::null_mut;
-use std::thread;
-use std::thread::sleep;
-use std::time::Duration;
 use tempfile::Builder;
 use toml;
-use winapi::shared::minwindef::DWORD;
-use winapi::um::jobapi2::{AssignProcessToJobObject, CreateJobObjectW, SetInformationJobObject};
-use winapi::um::winnt::{
-    JobObjectExtendedLimitInformation, JOBOBJECT_EXTENDED_LIMIT_INFORMATION,
-    JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE,
-};
-
-fn assign_to_job_object(child: &std::process::Child) {
-    unsafe {
-        let h_job = CreateJobObjectW(null_mut(), null_mut());
-
-        let mut info: JOBOBJECT_EXTENDED_LIMIT_INFORMATION = std::mem::zeroed();
-        //info.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
-        info.BasicLimitInformation.LimitFlags = 0;
-        SetInformationJobObject(
-            h_job,
-            9, // JobObjectExtendedLimitInformation
-            &mut info as *mut _ as *mut _,
-            std::mem::size_of::<JOBOBJECT_EXTENDED_LIMIT_INFORMATION>() as u32,
-        );
-
-        let handle = child.as_raw_handle();
-        AssignProcessToJobObject(h_job, handle as *mut winapi::ctypes::c_void);
-    }
-}
-
+use windows::Win32::System::Threading::{CREATE_BREAKAWAY_FROM_JOB, CREATE_NEW_CONSOLE};
 #[derive(Debug, Serialize, Deserialize)]
 struct TempData {
     config_file: String,
@@ -101,13 +72,24 @@ fn main() -> Result<()> {
     temp_data.set_program(program.to_string());
     temp_data.set_ppid(std::process::id());
 
+    let temp_prefix = format!(
+        "{}_{}_",
+        Path::new(self_program)
+            .file_stem()
+            .unwrap_or_else(|| OsStr::new("env-exec"))
+            .to_string_lossy(),
+        Path::new(program)
+            .file_stem()
+            .unwrap_or_else(|| OsStr::new("program"))
+            .to_string_lossy()
+    );
     let mut temp_file = Builder::new()
-        .prefix(&format!("{}_{}_", self_program, program))
+        .prefix(&temp_prefix)
         .suffix(".tmp")
         .keep(true)
         .tempfile()?;
 
-    debug!("temp file path: {:?}", temp_file.path());
+    info!("Created temp file: {:?}", temp_file.path());
 
     // TempData をバイナリにシリアライズして書き込み
     let encoded: Vec<u8> = bincode::serialize(&temp_data).unwrap();
@@ -144,22 +126,21 @@ fn main() -> Result<()> {
     let mut command = Command::new(program);
     command.args(command_args);
     command
+        .creation_flags((CREATE_BREAKAWAY_FROM_JOB.0) | (CREATE_NEW_CONSOLE.0))
         .stdin(Stdio::inherit())
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit());
 
     let mut child: Child = command.spawn()?;
-    debug!("Process started: {:?}", child.id());
-
-    // assign_to_job_object(&child);
+    info!("Sub process started ppid: {:?}", child.id());
 
     let temp_path = temp_file.path().to_path_buf();
 
     let status = child.wait()?;
-    debug!("Process exited with: {}", status);
+    info!("Sub process exited with: {}", status);
 
     if let Err(e) = std::fs::remove_file(&temp_path) {
-        eprintln!("Failed to delete temp file: {}", e);
+        error!("Failed to delete temp file: {}", e);
     }
 
     Ok(())
