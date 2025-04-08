@@ -21,7 +21,7 @@ use winapi::shared::minwindef::DWORD;
 use winapi::um::jobapi2::{AssignProcessToJobObject, CreateJobObjectW, SetInformationJobObject};
 use winapi::um::winnt::{
     JobObjectExtendedLimitInformation, JOBOBJECT_EXTENDED_LIMIT_INFORMATION,
-    JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+    JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE,
 };
 
 fn assign_to_job_object(child: &std::process::Child) {
