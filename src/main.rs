@@ -1,3 +1,4 @@
+mod structs;
 use anyhow::Result;
 use log::*;
 use regex::Regex;
@@ -14,41 +15,7 @@ use std::process::{Child, Command, Stdio};
 use tempfile::Builder;
 use toml;
 use windows::Win32::System::Threading::{CREATE_BREAKAWAY_FROM_JOB, CREATE_NEW_CONSOLE};
-
-#[derive(Debug, Serialize, Deserialize)]
-struct TempData {
-    parent_ppid: u32,
-    child_ppid: u32,
-    config_file: String,
-    program: String,
-    program_args: Vec<String>,
-}
-impl TempData {
-    fn new() -> Self {
-        Self {
-            parent_ppid: 0,
-            child_ppid: 0,
-            config_file: String::new(),
-            program: String::new(),
-            program_args:Vec::new(),
-        }
-    }
-    fn set_config_file(&mut self, config_file: String) {
-        self.config_file = config_file;
-    }
-    fn set_program(&mut self, program: String) {
-        self.program = program;
-    }
-    fn set_parent_ppid(&mut self, ppid: u32) {
-        self.parent_ppid = ppid;
-    }
-    fn set_child_ppid(&mut self, ppid: u32) {
-        self.child_ppid = ppid;
-    }
-    fn set_program_args(&mut self, args: Vec<String>) {
-        self.program_args = args;
-    }
-}
+use structs::*;
 #[derive(Debug, Deserialize)]
 struct Config {
     paths: Vec<String>,
@@ -140,8 +107,8 @@ fn main() -> Result<()> {
     info!("Sub process started ppid: {:?}", child_id);
     
     // 書き込みデータを設定
-    temp_data.set_parent_ppid(std::process::id());
-    temp_data.set_child_ppid(child_id);
+    temp_data.set_parent_pid(std::process::id());
+    temp_data.set_child_pid(child_id);
     temp_data.set_config_file(config_file.to_string());
     temp_data.set_program(program.to_string());
     temp_data.set_program_args(program_args.to_vec());
