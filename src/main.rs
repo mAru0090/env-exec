@@ -1,4 +1,10 @@
+// ====================
+// ====================
+// インポート部
+// ====================
+// ====================
 mod structs;
+mod utils;
 use anyhow::Result;
 use log::*;
 use regex::Regex;
@@ -16,19 +22,13 @@ use tempfile::Builder;
 use toml;
 use windows::Win32::System::Threading::{CREATE_BREAKAWAY_FROM_JOB, CREATE_NEW_CONSOLE};
 use structs::*;
-#[derive(Debug, Deserialize)]
-struct Config {
-    paths: Vec<String>,
-    envs: Vec<EnvVar>,
-}
+use utils::*;
 
-#[derive(Debug, Deserialize)]
-#[serde(untagged)]
-enum EnvVar {
-    Single(Vec<String>),
-    Multiple(String, Vec<String>),
-}
-
+// ====================
+// ====================
+// メイン関数
+// ====================
+// ====================
 fn main() -> Result<()> {
     let _ = SimpleLogger::new().init();
     let args: Vec<String> = env::args().collect();
@@ -70,7 +70,7 @@ fn main() -> Result<()> {
     let current_path = env::var("Path").unwrap_or_default();
     let mut new_path = current_path.clone();
 
-    for env_var in config.envs {
+    for env_var in config.get_envs() {
         match env_var {
             EnvVar::Single(ref env_pair) => {
                 if env_pair.len() == 2 {
@@ -84,7 +84,7 @@ fn main() -> Result<()> {
         }
     }
 
-    for path in config.paths {
+    for path in config.get_paths() {
         let expanded_path = expand_env_variables(&path);
         if !expanded_path.trim().is_empty() {
             new_path.push(';');
@@ -127,25 +127,4 @@ fn main() -> Result<()> {
     }
 
     Ok(())
-}
-
-fn read_toml<P>(filename: P) -> Result<Config, toml::de::Error>
-where
-    P: AsRef<Path>,
-{
-    let mut file = File::open(filename).map_err(|e| toml::de::Error::custom(e.to_string()))?;
-    let mut contents = String::new();
-    io::Read::read_to_string(&mut file, &mut contents).unwrap();
-    toml::de::from_str(&contents)
-}
-
-fn expand_env_variables(input: &str) -> String {
-    let re = Regex::new(r"\$\(([^)]+)\)").unwrap();
-    re.replace_all(input, |caps: &regex::Captures| {
-        env::var(&caps[1]).unwrap_or_else(|_| "".to_string())
-    })
-    .to_string()
-}
-fn expand_env_variables_vec(inputs: &[String]) -> Vec<String> {
-    inputs.iter().map(|s| expand_env_variables(s)).collect()
 }
