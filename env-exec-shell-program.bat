@@ -1,2 +1,2 @@
 @echo off
-env-exec "%USERPROFILE%\env-exec-config.toml" powershell -NoExit -Command "Set-ExecutionPolicy RemoteSigned -Scope Process; Set-Location -Path 'D:\win\program\'"
+env-exec run --config-file "%USERPROFILE%\env-exec-config.toml" --program powershell --  "-NoExit" "-Command" "Set-ExecutionPolicy RemoteSigned -Scope Process; Set-Location -Path 'D:\win\program\'"

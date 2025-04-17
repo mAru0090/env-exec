@@ -1,2 +1,2 @@
 @echo off
-env-exec "%USERPROFILE%/env-exec-config.toml" cmd "/K cd /d %USERPROFILE%"
+env-exec run  --config-file "%USERPROFILE%/env-exec-config.toml" --program cmd -- "/K cd /d %USERPROFILE%"

@@ -11,23 +11,23 @@ pub struct Config {
     envs: Vec<EnvVar>,
 }
 impl Config {
-	pub fn set_paths(&mut self,paths:Vec<String>) {
-		self.paths = paths;
-	}
-	pub fn get_paths(&self) -> Vec<String>{
-		self.paths.clone()
-	}
-	pub fn set_envs(&mut self,envs:Vec<EnvVar>){
-		self.envs = envs;
-	}
-	pub fn get_envs(&self) -> Vec<EnvVar>{
-		self.envs.clone()
-	}
+    pub fn set_paths(&mut self, paths: Vec<String>) {
+        self.paths = paths;
+    }
+    pub fn get_paths(&self) -> Vec<String> {
+        self.paths.clone()
+    }
+    pub fn set_envs(&mut self, envs: Vec<EnvVar>) {
+        self.envs = envs;
+    }
+    pub fn get_envs(&self) -> Vec<EnvVar> {
+        self.envs.clone()
+    }
 }
 // ====================
 // 環境変数用構造体
 // ====================
-#[derive(Debug, Deserialize,Clone)]
+#[derive(Debug, Deserialize, Clone)]
 #[serde(untagged)]
 pub enum EnvVar {
     Single(Vec<String>),
@@ -54,7 +54,7 @@ impl TempData {
             child_pid: 0,
             config_file: String::new(),
             program: String::new(),
-            program_args:Vec::new(),
+            program_args: Vec::new(),
         }
     }
     pub fn set_config_file(&mut self, config_file: String) {

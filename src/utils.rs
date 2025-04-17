@@ -3,6 +3,7 @@
 // インポート部
 // ====================
 // ====================
+use crate::structs::*;
 use anyhow::Result;
 use log::*;
 use regex::Regex;
@@ -19,7 +20,6 @@ use std::process::{Child, Command, Stdio};
 use tempfile::Builder;
 use toml;
 use windows::Win32::System::Threading::{CREATE_BREAKAWAY_FROM_JOB, CREATE_NEW_CONSOLE};
-use crate::structs::*;
 // ====================
 // tomlファイルを開き、Config構造体を返す関数
 // ====================
