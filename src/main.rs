@@ -1,6 +1,8 @@
 // ====================
 // ====================
+// ====================
 // インポート部
+// ====================
 // ====================
 // ====================
 mod structs;
@@ -25,12 +27,18 @@ use toml;
 use utils::*;
 use windows::Win32::System::Threading::{CREATE_BREAKAWAY_FROM_JOB, CREATE_NEW_CONSOLE};
 
-
+// ====================
+// メイン引数格納用構造体
+// ====================
 #[derive(Parser, Clone)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
 }
+
+// ====================
+// 各コマンドリスト
+// ====================
 #[derive(Subcommand, Debug, Clone)]
 enum Commands {
     Run {
@@ -39,15 +47,27 @@ enum Commands {
         #[arg(short, long)]
         program: PathBuf,
         #[arg(required = false)]
-        program_args: Option<Vec<String>>, 
+        program_args: Option<Vec<String>>,
     },
-    Tag {},
+    #[command(subcommand)]
+    Tag(TagCommand),
     Restart {},
 }
+
 // ====================
+// タグ用コマンド
+// ====================
+#[derive(Subcommand, Debug, Clone)]
+enum TagCommand {
+    Add {
+        #[arg(short, long)]
+        name: String,
+    },
+    List,
+}
+
 // ====================
 // メイン関数
-// ====================
 // ====================
 fn main() -> Result<()> {
     let _ = SimpleLogger::new().init();
@@ -58,7 +78,7 @@ fn main() -> Result<()> {
             program,
             program_args,
         } => {
-    	    let args: Vec<String> = env::args().collect();
+            let args: Vec<String> = env::args().collect();
             let self_program = &args[0];
             let mut temp_data = TempData::new();
             let temp_prefix = format!(
@@ -81,7 +101,6 @@ fn main() -> Result<()> {
             debug!("Created temp file: {:?}", temp_file.path());
 
             let config: Config = read_toml(config_file)?;
-
             let current_path = env::var("Path").unwrap_or_default();
             let mut new_path = current_path.clone();
 
@@ -110,14 +129,13 @@ fn main() -> Result<()> {
             env::set_var("Path", new_path);
             let mut command = Command::new(program);
             debug!("program_args = {:?}", program_args);
-	    let p_args = if program_args.clone().is_some() {
-	    	program_args.clone().unwrap()
-	    }else{
-	    	vec![]
-	    };
+            let p_args = if let Some(args) = program_args.clone() {
+                args
+            } else {
+                vec![]
+            };
             command.args(p_args.clone());
             command
-                //.creation_flags((CREATE_BREAKAWAY_FROM_JOB.0) | (CREATE_NEW_CONSOLE.0))
                 .creation_flags(CREATE_NEW_CONSOLE.0)
                 .stdin(Stdio::inherit())
                 .stdout(Stdio::inherit())
@@ -127,14 +145,12 @@ fn main() -> Result<()> {
             let child_id = child.id();
             debug!("Sub process started ppid: {:?}", child_id);
 
-            // 書き込みデータを設定
             temp_data.set_parent_pid(std::process::id());
             temp_data.set_child_pid(child_id);
             temp_data.set_config_file(config_file.to_string_lossy().to_string());
             temp_data.set_program(program.to_string_lossy().to_string());
             temp_data.set_program_args(p_args.clone());
 
-            // TempData をバイナリにシリアライズして書き込み
             let encoded: Vec<u8> = bincode::serialize(&temp_data)?;
             temp_file.write_all(&encoded)?;
             debug!("Written temp file: {:?}", temp_data);
@@ -147,9 +163,19 @@ fn main() -> Result<()> {
                 error!("Failed to delete temp file: {}", e);
             }
         }
-        Commands::Tag{} => {}
-        Commands::Restart{} => {}
+        Commands::Tag(tag_cmd) => match tag_cmd {
+            TagCommand::Add { name } => {
+                println!("Add tag: {}", name);
+            }
+            TagCommand::List => {
+                println!("Listed tag");
+            }
+        },
+        Commands::Restart {} => {
+            println!("Restart Process（）");
+        }
     }
+
     println!("何かキーを押してください...");
     let mut _input = String::new();
     io::stdin().read_line(&mut _input).unwrap();
