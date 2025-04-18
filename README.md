@@ -56,10 +56,10 @@ envs = [ ["TEST_ENV", "100"], ["ANOTHER_ENV", "example_value"] ]
 
 ## 簡単な実行例：
 
-env-exec.exe config.toml cmd "/C echo %PATH%"
+eec.exe config.toml cmd "/C echo %PATH%"
 
 または Bash の場合：
 
-env-exec.exe config.toml bash "-c" "echo $PATH"
+eec.exe config.toml bash "-c" "echo $PATH"
 
 ---
