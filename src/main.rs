@@ -92,6 +92,8 @@ fn main() -> Result<()> {
                     .unwrap_or_else(|| OsStr::new("program"))
                     .to_string_lossy()
             );
+
+            let config: Config = read_toml(config_file)?;
             let mut temp_file = Builder::new()
                 .prefix(&temp_prefix)
                 .suffix(".tmp")
@@ -100,7 +102,6 @@ fn main() -> Result<()> {
 
             debug!("Created temp file: {:?}", temp_file.path());
 
-            let config: Config = read_toml(config_file)?;
             let current_path = env::var("Path").unwrap_or_default();
             let mut new_path = current_path.clone();
 
@@ -160,7 +161,7 @@ fn main() -> Result<()> {
             debug!("Sub process exited with: {}", status);
 
             if let Err(e) = std::fs::remove_file(&temp_path) {
-                error!("Failed to delete temp file: {}", e);
+                return Err(anyhow::anyhow!("Failed to delete temp file: {}", e));
             }
         }
         Commands::Tag(tag_cmd) => match tag_cmd {
