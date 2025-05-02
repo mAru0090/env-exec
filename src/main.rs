@@ -26,7 +26,10 @@ use tempfile::Builder;
 use toml;
 use utils::*;
 use windows::Win32::System::Threading::{CREATE_BREAKAWAY_FROM_JOB, CREATE_NEW_CONSOLE};
-
+use std::fs;
+use std::thread;
+use std::time::Duration;
+use std::fs::OpenOptions;
 // ====================
 // メイン引数格納用構造体
 // ====================
@@ -66,6 +69,30 @@ enum TagCommand {
     List,
 }
 
+
+// ====================
+// manifestファイルへ書き込む関数
+// ====================
+fn write_to_manifest(temp_file_path: &Path, eec_pid: u32) -> io::Result<PathBuf> {
+    let manifest_dir = temp_file_path.parent().unwrap(); // 一時ファイルと同じディレクトリ
+    let manifest_path = manifest_dir.join("eec_manifest.txt");
+
+    // ファイルが存在しない場合は作成、既存の場合は追記
+    let mut file = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&manifest_path)?;
+
+    // 一時ファイルのパスとeecのPIDを追記
+    writeln!(file, "{} {}", temp_file_path.display(), eec_pid)?;
+
+    // 作成したマニフェストファイルのパスを返す
+    Ok(manifest_path)
+}
+
+
+
+
 // ====================
 // メイン関数
 // ====================
@@ -101,6 +128,9 @@ fn main() -> Result<()> {
                 .tempfile()?;
 
             debug!("Created temp file: {:?}", temp_file.path());
+	    // eec_manifest.txt を一時ファイルディレクトリに作成
+            let manifest_path = write_to_manifest(temp_file.path(), std::process::id())?;
+            debug!("Created manifest file: {:?}", manifest_path);
 
             let current_path = env::var("Path").unwrap_or_default();
             let mut new_path = current_path.clone();
@@ -137,7 +167,7 @@ fn main() -> Result<()> {
             };
             command.args(p_args.clone());
             command
-                .creation_flags(CREATE_NEW_CONSOLE.0)
+                // .creation_flags(CREATE_NEW_CONSOLE.0)
                 .stdin(Stdio::inherit())
                 .stdout(Stdio::inherit())
                 .stderr(Stdio::inherit());
@@ -156,13 +186,15 @@ fn main() -> Result<()> {
             temp_file.write_all(&encoded)?;
             debug!("Written temp file: {:?}", temp_data);
 
+	    
+
             let temp_path = temp_file.path().to_path_buf();
             let status = child.wait()?;
             debug!("Sub process exited with: {}", status);
-
             if let Err(e) = std::fs::remove_file(&temp_path) {
                 return Err(anyhow::anyhow!("Failed to delete temp file: {}", e));
             }
+        
         }
         Commands::Tag(tag_cmd) => match tag_cmd {
             TagCommand::Add { name } => {

@@ -34,6 +34,7 @@ pub enum EnvVar {
     Multiple(String, Vec<String>),
 }
 
+
 // ====================
 // ====================
 // 構造体定義部
