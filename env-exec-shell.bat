@@ -11,7 +11,7 @@ if %ERRORLEVEL% equ 0 (
     start "" "%eec_deleter%"
 )
 
-eec run --config-file "%USERPROFILE%\env-exec-config.toml" ^
-    --program powershell -- "-NoExit" "-Command" "Set-ExecutionPolicy RemoteSigned -Scope Process;" "Set-Location -Path $env:USERPROFILE"
-
+REM eec run --config-file "%USERPROFILE%\env-exec-config.toml" ^
+REM   --program powershell -- "-NoExit" "-Command" "Set-ExecutionPolicy RemoteSigned -Scope Process;" "Set-Location -Path $env:USERPROFILE"
+eec run --tag powershell00
 endlocal

@@ -54,6 +54,8 @@ enum Commands {
         #[arg(long, required = false)]
         tag: Option<String>,
     },
+    Clear {
+    },
     #[command(subcommand)]
     Tag(TagCommand),
     #[command(subcommand)]
@@ -70,6 +72,7 @@ enum TagCommand {
         name: String,
     },
     List,
+    Clear,
 }
 // ====================
 // リスタート用コマンド
@@ -197,7 +200,7 @@ fn main() -> Result<()> {
 
             env::set_var("Path", new_path);
             let mut command = Command::new(&program);
-            debug!("program_args = {:?}", program_args);
+            debug!("program_args = {:?}", p_args);
             command.args(p_args.clone());
             command
                 // .creation_flags(CREATE_NEW_CONSOLE.0)
@@ -225,6 +228,9 @@ fn main() -> Result<()> {
             if let Err(e) = std::fs::remove_file(&temp_path) {
                 return Err(anyhow::anyhow!("Failed to delete temp file: {}", e));
             }
+            debug!("Deleted temp file: {}", temp_path.display());
+        }
+        Commands::Clear {} => {
         }
         Commands::Tag(tag_cmd) => match tag_cmd {
             TagCommand::Add { name } => {
@@ -232,6 +238,8 @@ fn main() -> Result<()> {
             }
             TagCommand::List => {
                 println!("Listed tag");
+            }
+            TagCommand::Clear => {
             }
         },
         Commands::Restart(restart_cmd) => match restart_cmd {

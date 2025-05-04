@@ -8,7 +8,8 @@ if %ERRORLEVEL% equ 0 (
     echo [%eec_deleter%] は既に実行中です。
 ) else (
     echo [%eec_deleter%] を起動します…
-    start "" "%eec_deleter%"
+    start "%eec_deleter%" "%eec_deleter%"
 )
 
-eec run  --config-file "%USERPROFILE%/env-exec-config.toml" --program cmd -- "/K cd /d %USERPROFILE%"
+REM eec run  --config-file "%USERPROFILE%/env-exec-config.toml" --program cmd -- "/K cd /d %USERPROFILE%"
+eec run --tag cmd00
