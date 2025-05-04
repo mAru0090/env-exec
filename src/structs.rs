@@ -2,6 +2,7 @@ use anyhow::Result;
 use log::*;
 use serde::de::Error;
 use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
 // ====================
 // 環境設定用構造体
 // ====================
@@ -33,7 +34,6 @@ pub enum EnvVar {
     Single(Vec<String>),
     Multiple(String, Vec<String>),
 }
-
 
 // ====================
 // ====================
@@ -72,5 +72,42 @@ impl TempData {
     }
     pub fn set_program_args(&mut self, args: Vec<String>) {
         self.program_args = args;
+    }
+}
+
+// ====================
+// タグとして保存するデータ構造体
+// ====================
+#[derive(Serialize, Deserialize, Debug)]
+pub struct TagData {
+    config_file: PathBuf,
+    program: PathBuf,
+    program_args: Vec<String>,
+}
+impl TagData {
+    pub fn new() -> Self {
+        TagData {
+            config_file: PathBuf::new(),
+            program: PathBuf::new(),
+            program_args: Vec::new(),
+        }
+    }
+    pub fn get_program(&self) -> PathBuf {
+        self.program.clone()
+    }
+    pub fn get_program_args(&self) -> Vec<String> {
+        self.program_args.clone()
+    }
+    pub fn get_config_file(&self) -> PathBuf {
+        self.config_file.clone()
+    }
+    pub fn set_program(&mut self, program: PathBuf) {
+        self.program = program;
+    }
+    pub fn set_args(&mut self, program_args: Vec<String>) {
+        self.program_args = program_args;
+    }
+    pub fn set_config_file(&mut self, config_file: PathBuf) {
+        self.config_file = config_file;
     }
 }
