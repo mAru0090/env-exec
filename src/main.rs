@@ -103,7 +103,7 @@ fn main() -> Result<()> {
             let tag_data = match tag {
                 Some(ref t) if !t.is_empty() => match read_tag_data(t) {
                     Some(data) => {
-                        debug!("Found tag data: {:?}",data);
+                        debug!("Found tag data: name: {:?} {:?}",t,data);
                         data
                     },
                     None => return Err(anyhow::anyhow!("タグデータ読み込みに失敗しました")),
