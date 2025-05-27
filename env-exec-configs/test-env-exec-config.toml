@@ -1,0 +1,6 @@
+envs =  [
+	["TEST_IKUIKU_ENV","おっ"]
+]
+paths = [
+	"test/test13131"
+]
