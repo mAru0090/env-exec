@@ -54,8 +54,6 @@ enum Commands {
         #[arg(long, required = false)]
         tag: Option<String>,
     },
-    Clear {
-    },
     #[command(subcommand)]
     Tag(TagCommand),
     #[command(subcommand)]
@@ -72,7 +70,7 @@ enum TagCommand {
         name: String,
     },
     List,
-    Clear,
+    Remove,
 }
 // ====================
 // リスタート用コマンド
@@ -103,9 +101,9 @@ fn main() -> Result<()> {
             let tag_data = match tag {
                 Some(ref t) if !t.is_empty() => match read_tag_data(t) {
                     Some(data) => {
-                        debug!("Found tag data: name: {:?} {:?}",t,data);
+                        debug!("Found tag data: name: {:?} {:?}", t, data);
                         data
-                    },
+                    }
                     None => return Err(anyhow::anyhow!("タグデータ読み込みに失敗しました")),
                 },
                 _ => TagData::new(),
@@ -233,8 +231,6 @@ fn main() -> Result<()> {
             }
             debug!("Deleted temp file: {}", temp_path.display());
         }
-        Commands::Clear {} => {
-        }
         Commands::Tag(tag_cmd) => match tag_cmd {
             TagCommand::Add { name } => {
                 println!("Add tag: {}", name);
@@ -242,8 +238,7 @@ fn main() -> Result<()> {
             TagCommand::List => {
                 println!("Listed tag");
             }
-            TagCommand::Clear => {
-            }
+            TagCommand::Remove => {}
         },
         Commands::Restart(restart_cmd) => match restart_cmd {
             _ => println!("Restart Process（）"),
