@@ -58,6 +58,21 @@ impl TempData {
             program_args: Vec::new(),
         }
     }
+    pub fn get_config_file(&self) -> String {
+        self.config_file.clone()
+    }
+    pub fn get_child_pid(&self) -> u32 {
+        self.child_pid
+    }
+    pub fn get_parent_pid(&self) -> u32 {
+        self.parent_pid
+    }
+    pub fn get_program(&self) -> String {
+        self.program.clone()
+    }
+    pub fn get_program_args(&self) -> Vec<String> {
+        self.program_args.clone()
+    }
     pub fn set_config_file(&mut self, config_file: String) {
         self.config_file = config_file;
     }
@@ -104,7 +119,7 @@ impl TagData {
     pub fn set_program(&mut self, program: PathBuf) {
         self.program = program;
     }
-    pub fn set_args(&mut self, program_args: Vec<String>) {
+    pub fn set_program_args(&mut self, program_args: Vec<String>) {
         self.program_args = program_args;
     }
     pub fn set_config_file(&mut self, config_file: PathBuf) {
